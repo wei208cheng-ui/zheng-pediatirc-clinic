@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鄭煒達診所 - 全功能互動式控糖配額計算機</title>
+  <style>
+    :root {
+      --mint: #a8e6cf;
+      --mint-dark: #7bc9a6;
+      --mint-light: #e8f8f0;
+      --cream: #fef9f0;
+      --soft-blue: #d4e8f5;
+      --soft-pink: #fce4ec;
+      --soft-yellow: #fff8e7;
+      --text: #2d3a3a;
+      --text-muted: #5a6a6a;
+      --border: #c5e0d4;
+      --shadow: 0 4px 20px rgba(123, 201, 166, 0.15);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+      background: linear-gradient(160deg, var(--mint-light) 0%, var(--cream) 50%, #f0f7f4 100%);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 20px 12px 60px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      padding: 28px 16px 20px;
+      margin-bottom: 8px;
+    }
+
+    header h1 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #1a5c45;
+      letter-spacing: 0.02em;
+      margin-bottom: 6px;
+    }
+
+    header .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      padding: 22px 20px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(8px);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1a5c45;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title .step {
+      background: var(--mint);
+      color: #1a5c45;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    /* Step 1 inputs */
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 520px) {
+      .input-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .field input,
+    .field select {
+      font-size: 1.05rem;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--mint-light);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--mint-dark);
+      box-shadow: 0 0 0 3px rgba(168, 230, 207, 0.4);
+    }
+
+    .field .unit {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .result-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .result-box {
+      background: var(--mint-light);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+
+    .result-box .label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .result-box .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #1a5c45;
+    }
+
+    .result-box.highlight {
+      background: linear-gradient(135deg, var(--mint) 0%, #c5f0dc 100%);
+    }
+
+    /* Macro table */
+    .macro-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 8px;
+      font-size: 0.9rem;
+    }
+
+    .macro-table th {
+      text-align: left;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .macro-table td {
+      padding: 12px 10px;
+      background: var(--mint-light);
+      vertical-align: middle;
+    }
+
+    .macro-table tr td:first-child {
+      border-radius: 10px 0 0 10px;
+      font-weight: 600;
+    }
+
+    .macro-table tr td:last-child {
+      border-radius: 0 10px 10px 0;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .macro-table .carb td { background: #e0f5ea; }
+    .macro-table .protein td { background: var(--soft-blue); }
+    .macro-table .fat td { background: var(--soft-yellow); }
+    .macro-table .sugar td { background: var(--soft-pink); }
+
+    .pct-badge {
+      display: inline-block;
+      background: white;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    /* Food lists */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .section-header h3 {
+      font-size: 1rem;
+      color: #1a5c45;
+    }
+
+    .quota-badge {
+      background: var(--mint);
+      color: #1a5c45;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    .quota-badge.over {
+      background: #ffcdd2;
+      color: #c62828;
+    }
+
+    .sub-section {
+      margin-bottom: 18px;
+    }
+
+    .sub-section h4 {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      padding-left: 4px;
+      border-left: 3px solid var(--mint-dark);
+    }
+
+    .food-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .food-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: #fafcfa;
+      border-radius: 10px;
+      border: 1px solid #e8f0eb;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .food-item:hover {
+      background: var(--mint-light);
+      border-color: var(--mint);
+    }
+
+    .food-item.checked {
+      background: var(--mint-light);
+      border-color: var(--mint-dark);
+    }
+
+    .food-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: #2e8b6a;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .food-item .content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .food-item .name {
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+
+    .food-item .detail {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .food-item .portion {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #2e8b6a;
+      white-space: nowrap;
+      background: white;
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    /* Tally bar */
+    .tally-bar {
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-around;
+      gap: 8px;
+      z-index: 100;
+      margin: 0 -12px -60px;
+    }
+
+    .tally-item {
+      text-align: center;
+      flex: 1;
+    }
+
+    .tally-item .tally-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .tally-item .tally-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1a5c45;
+    }
+
+    .tally-item .tally-value.over {
+      color: #c62828;
+    }
+
+    /* Tips */
+    .tip-box {
+      background: linear-gradient(135deg, #e8f8f0, #f0f7ff);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      font-size: 0.88rem;
+    }
+
+    .tip-box strong {
+      color: #1a5c45;
+    }
+
+    .tip-box ul {
+      margin: 8px 0 0 18px;
+      color: var(--text-muted);
+    }
+
+    .tip-box li {
+      margin-bottom: 4px;
+    }
+
+    .veg-note {
+      background: #f1f8e9;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 0.88rem;
+      border: 1px solid #c5e1a5;
+    }
+
+    .veg-note h4 {
+      color: #33691e;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 24px;
+      padding: 16px;
+    }
+
+    .note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🩺 鄭煒達診所</h1>
+      <div class="subtitle">全功能互動式控糖配額計算機</div>
+    </header>
+
+    <!-- 步驟一 -->
+    <div class="card">
+      <div class="card-title">
+        <span class="step">步驟一</span>
+        個案基本資料與熱量估算
+      </div>
+      <div class="input-grid">
+        <div class="field">
+          <label>🧍 患者身高</label>
+          <input type="number" id="height" value="165" min="100" max="220" step="1">
+          <span class="unit">公分 (cm)</span>
+        </div>
+        <div class="field">
+          <label>⚖️ 患者體重</label>
+          <input type="number" id="weight" value="68" min="30" max="200" step="0.1">
+          <span class="unit">公斤 (kg)</span>
+        </div>
+        <div class="field">
+          <label>🏃 日常活動量</label>
+          <select id="activity">
+            <option value="25">輕度工作（×25）</option>
+            <option value="30" selected>輕度活動（×30）</option>
+            <option value="35">中度活動（×35）</option>
+            <option value="40">重度活動（×40）</option>
+          </select>
+        </div>
+      </div>
+      <div class="result-row">
+        <div class="result-box">
+          <div class="label">🎯 理想體重</div>
+          <div class="value"><span id="idealWeight">60.0</span> <small>kg</small></div>
+        </div>
+        <div class="result-box highlight">
+          <div class="label">🔥 每日總熱量</div>
+          <div class="value"><span id="totalCal">1800</span> <small>大卡</small></div>
+        </div>
+      </div>
+      <p class="note">臨床公式：理想體重 = (身高/100)² × 22　｜　熱量 = 理想體重 × 活動係數</p>
+    </div>
+
+    <!-- 步驟二 -->
+    <div class="card">
+      <div class="card-title">
+        <span class="step">步驟二</span>
+        三大營養素 ＋ 精緻糖 配置總表
+      </div>
+      <table class="macro-table">
+        <thead>
+          <tr>
+            <th>營養素</th>
+            <th>佔比</th>
+            <th>目標重量</th>
+            <th>份數</th>
+            <th>控糖原則</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="carb">
+            <td>🌾 醣類</td>
+            <td><span class="pct-badge">50%</span></td>
+            <td><strong id="carbG">225</strong> 公克</td>
+            <td><strong id="carbP">15</strong> 份</td>
+            <td>定時定量，選低 GI 原型食物</td>
+          </tr>
+          <tr class="protein">
+            <td>🥩 蛋白質</td>
+            <td><span class="pct-badge">20%</span></td>
+            <td><strong id="proteinG">90</strong> 公克</td>
+            <td><strong id="proteinP">13</strong> 份</td>
+            <td>扣除主食蛋白，補 7–8 份純肉豆</td>
+          </tr>
+          <tr class="fat">
+            <td>🥑 脂肪</td>
+            <td><span class="pct-badge">30%</span></td>
+            <td><strong id="fatG">60</strong> 公克</td>
+            <td><strong id="fatP">12</strong> 份</td>
+            <td>扣除隱形脂肪，烹調+堅果 3–5 份</td>
+          </tr>
+          <tr class="sugar">
+            <td>⚠️ 添加糖</td>
+            <td><span class="pct-badge">&lt;5%</span></td>
+            <td>低於 <strong id="sugarG">22.5</strong> 公克</td>
+            <td>—</td>
+            <td>空熱量，吃了須扣減醣類</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 步驟三 -->
+    <div class="card">
+      <div class="card-title">
+        <span class="step">步驟三</span>
+        每日食物代換生活清單
+      </div>
+
+      <div class="tip-box">
+        <strong>💡 臨床視覺化心法</strong>
+        <ul>
+          <li><strong>1 份醣</strong> ＝ 1/4 碗飯 ＝ 15g 碳水。多吃 1 份地瓜／水果，飯就要少 1/4 碗。</li>
+          <li><strong>1 份蛋白</strong> ＝ 手掌心 1/3 大小、厚度 1 公分。</li>
+          <li><strong>1 份油脂</strong> ＝ 大拇指第一節 ＝ 1 茶匙烹調油。</li>
+        </ul>
+      </div>
+
+      <!-- 醣類 -->
+      <div class="sub-section">
+        <div class="section-header">
+          <h3>🌾 醣類食物</h3>
+          <span class="quota-badge" id="carbQuota">已選 0 / 15 份</span>
+        </div>
+
+        <h4>【全榖雜糧類（主食、根莖類、點心）】</h4>
+        <ul class="food-list" id="carbList1">
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">糙米飯 / 五穀飯 / 白飯</div>
+              <div class="detail">40g（1/4 碗）｜整碗 = 4 份</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">熟麵條 / 通心麵 / 米粉 / 冬粉</div>
+              <div class="detail">半碗｜整碗 = 2 份</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">統一無糖燕麥（燕麥奶）</div>
+              <div class="detail">1/2 瓶（約 145ml）｜整瓶 = 2 份</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">純燕麥片（生重）</div>
+              <div class="detail">3 湯匙（20g）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">地瓜 / 芋頭 / 南瓜</div>
+              <div class="detail">55g（1/3 碗）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">山藥</div>
+              <div class="detail">100g（約半碗）｜整碗 = 2 份</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">原味饅頭</div>
+              <div class="detail">1/3 個（中型）｜整顆 = 3 份</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">薄片吐司</div>
+              <div class="detail">1 片</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+        </ul>
+
+        <h4 style="margin-top:16px">【擴充水果類（建議固定分配 2 份，其餘留給主食）】</h4>
+        <ul class="food-list" id="carbList2">
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">泰國芭樂</div>
+              <div class="detail">1/2 顆（約 160g）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">本土小芭樂</div>
+              <div class="detail">1 顆（約女生拳頭大）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">富士蘋果 / 土蘋果</div>
+              <div class="detail">1 個（小，約 130g）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">大香蕉</div>
+              <div class="detail">1/2 根（約 75g）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">小香蕉</div>
+              <div class="detail">1 根</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">聖女小番茄</div>
+              <div class="detail">23 顆（裝滿標準飯碗約 8 分滿）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">奇異果</div>
+              <div class="detail">1.5 顆（約 125g）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">蓮霧</div>
+              <div class="detail">2 顆（中型，約 180g）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">柳丁 / 橘子</div>
+              <div class="detail">1 個（中型，約 130g）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">進口 / 在地葡萄</div>
+              <div class="detail">13 顆（約 100g）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">巨峰葡萄（大粒）</div>
+              <div class="detail">8–10 顆</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">木瓜 / 西瓜 / 哈密瓜</div>
+              <div class="detail">切塊 8 分滿碗</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">愛文芒果</div>
+              <div class="detail">切塊約半碗（110g）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">進口草莓</div>
+              <div class="detail">10 顆（中型，約 160g）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">火龍果（白肉 / 紅肉）</div>
+              <div class="detail">1/4 顆（約 110g）</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="carb">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">荔枝 / 泰國紅毛丹</div>
+              <div class="detail">5 顆</div>
+            </div>
+            <span class="portion">1 份醣</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 蛋白質 -->
+      <div class="sub-section">
+        <div class="section-header">
+          <h3>🥩 蛋白質食物</h3>
+          <span class="quota-badge" id="proteinQuota">已選 0 / 13 份</span>
+        </div>
+        <h4>【豆魚蛋肉類（扣除主食自帶蛋白，一天約需補 7–8 份純肉豆）】</h4>
+        <ul class="food-list" id="proteinList">
+          <li class="food-item" data-portion="1" data-type="protein">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">雞蛋</div>
+              <div class="detail">1 顆</div>
+            </div>
+            <span class="portion">1 份蛋白</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="protein">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">無糖豆漿</div>
+              <div class="detail">260ml（約 1 馬克杯）｜大瓶裝約 1.5 份</div>
+            </div>
+            <span class="portion">1 份蛋白</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="protein">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">傳統板豆腐</div>
+              <div class="detail">2 格（生重 80g）</div>
+            </div>
+            <span class="portion">1 份蛋白</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="protein">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">盒裝嫩豆腐</div>
+              <div class="detail">半盒（140g）</div>
+            </div>
+            <span class="portion">1 份蛋白</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="protein">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">去皮雞胸肉 / 雞里肌</div>
+              <div class="detail">30g（約兩指寬大小）</div>
+            </div>
+            <span class="portion">1 份蛋白</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="protein">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">各類鮮魚片 / 鮮蝦 / 花枝</div>
+              <div class="detail">30–35g</div>
+            </div>
+            <span class="portion">1 份蛋白</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="protein">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">牛肉 / 豬肉（去皮純瘦肉）</div>
+              <div class="detail">35g</div>
+            </div>
+            <span class="portion">1 份蛋白</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 脂肪 -->
+      <div class="sub-section">
+        <div class="section-header">
+          <h3>🥑 脂肪食物</h3>
+          <span class="quota-badge" id="fatQuota">已選 0 / 12 份</span>
+        </div>
+        <h4>【油脂與堅果種子類（外食油量多已足夠，建議多由原型堅果代換）】</h4>
+        <ul class="food-list" id="fatList">
+          <li class="food-item" data-portion="1" data-type="fat">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">植物烹調油（橄欖油 / 芥花油）</div>
+              <div class="detail">1 茶匙（5ml）</div>
+            </div>
+            <span class="portion">1 份油脂</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="fat">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">綜合堅果</div>
+              <div class="detail">1 湯匙（約 7–10g）</div>
+            </div>
+            <span class="portion">1 份油脂</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="fat">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">腰果 / 杏仁果</div>
+              <div class="detail">5–7 粒</div>
+            </div>
+            <span class="portion">1 份油脂</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="fat">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">核桃仁</div>
+              <div class="detail">2 粒</div>
+            </div>
+            <span class="portion">1 份油脂</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="fat">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">台灣在地花生</div>
+              <div class="detail">10 粒</div>
+            </div>
+            <span class="portion">1 份油脂</span>
+          </li>
+          <li class="food-item" data-portion="1" data-type="fat">
+            <input type="checkbox">
+            <div class="content">
+              <div class="name">優質生酪梨</div>
+              <div class="detail">1/6 顆（約 40g）</div>
+            </div>
+            <span class="portion">1 份油脂</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 蔬菜 -->
+      <div class="veg-note">
+        <h4>🥗 綠葉蔬菜類（免計算類，建議每日積極攝取 3～4 碗）</h4>
+        <p><strong>允許食物：</strong>高麗菜、空心菜、青江菜、綠花椰菜、四季豆、各類菇類、黑木耳。</p>
+        <p style="margin-top:8px"><strong>進食策略：</strong>每餐吃飯前，先吃完 1 碗蔬菜與蛋白質食物，最後再吃全榖雜糧主食，穩糖與延緩血糖波動的效果最顯著。</p>
+      </div>
+    </div>
+
+    <footer>
+      本互動式計算機由鄭煒達診所共同照護團隊編製<br>
+      供糖尿病個案管理、臨床衛教使用　｜　此為衛教工具，非醫療診斷
+    </footer>
+  </div>
+
+  <!-- Sticky tally bar -->
+  <div class="tally-bar">
+    <div class="tally-item">
+      <div class="tally-label">🌾 醣類</div>
+      <div class="tally-value" id="tallyCarb">0 / 15</div>
+    </div>
+    <div class="tally-item">
+      <div class="tally-label">🥩 蛋白質</div>
+      <div class="tally-value" id="tallyProtein">0 / 13</div>
+    </div>
+    <div class="tally-item">
+      <div class="tally-label">🥑 脂肪</div>
+      <div class="tally-value" id="tallyFat">0 / 12</div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Calculation =====
+    function recalc() {
+      const h = parseFloat(document.getElementById('height').value) || 0;
+      const factor = parseFloat(document.getElementById('activity').value) || 30;
+
+      const ideal = (h / 100) * (h / 100) * 22;
+      const cal = Math.round(ideal * factor);
+
+      document.getElementById('idealWeight').textContent = ideal.toFixed(1);
+      document.getElementById('totalCal').textContent = cal;
+
+      // Macros
+      const carbG = Math.round(cal * 0.5 / 4);
+      const proteinG = Math.round(cal * 0.2 / 4);
+      const fatG = Math.round(cal * 0.3 / 9);
+      const sugarG = (cal * 0.05 / 4).toFixed(1);
+
+      const carbP = Math.round(carbG / 15);
+      const proteinP = Math.round(proteinG / 7);
+      const fatP = Math.round(fatG / 5);
+
+      document.getElementById('carbG').textContent = carbG;
+      document.getElementById('proteinG').textContent = proteinG;
+      document.getElementById('fatG').textContent = fatG;
+      document.getElementById('sugarG').textContent = sugarG;
+
+      document.getElementById('carbP').textContent = carbP;
+      document.getElementById('proteinP').textContent = proteinP;
+      document.getElementById('fatP').textContent = fatP;
+
+      // Update quotas
+      window.limits = { carb: carbP, protein: proteinP, fat: fatP };
+      updateTally();
+    }
+
+    // ===== Tally =====
+    function updateTally() {
+      const counts = { carb: 0, protein: 0, fat: 0 };
+
+      document.querySelectorAll('.food-item input:checked').forEach(cb => {
+        const item = cb.closest('.food-item');
+        const type = item.dataset.type;
+        const portion = parseFloat(item.dataset.portion) || 1;
+        counts[type] += portion;
+        item.classList.add('checked');
+      });
+
+      document.querySelectorAll('.food-item input:not(:checked)').forEach(cb => {
+        cb.closest('.food-item').classList.remove('checked');
+      });
+
+      const lim = window.limits || { carb: 15, protein: 13, fat: 12 };
+
+      // Quota badges
+      setQuota('carbQuota', counts.carb, lim.carb);
+      setQuota('proteinQuota', counts.protein, lim.protein);
+      setQuota('fatQuota', counts.fat, lim.fat);
+
+      // Sticky bar
+      setTally('tallyCarb', counts.carb, lim.carb);
+      setTally('tallyProtein', counts.protein, lim.protein);
+      setTally('tallyFat', counts.fat, lim.fat);
+    }
+
+    function setQuota(id, val, lim) {
+      const el = document.getElementById(id);
+      el.textContent = `已選 ${val} / ${lim} 份`;
+      el.classList.toggle('over', val > lim);
+    }
+
+    function setTally(id, val, lim) {
+      const el = document.getElementById(id);
+      el.textContent = `${val} / ${lim}`;
+      el.classList.toggle('over', val > lim);
+    }
+
+    // ===== Events =====
+    document.getElementById('height').addEventListener('input', recalc);
+    document.getElementById('weight').addEventListener('input', recalc);
+    document.getElementById('activity').addEventListener('change', recalc);
+
+    document.querySelectorAll('.food-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'INPUT') {
+          const cb = item.querySelector('input');
+          cb.checked = !cb.checked;
+        }
+        updateTally();
+      });
+    });
+
+    // Init
+    window.limits = { carb: 15, protein: 13, fat: 12 };
+    recalc();
+  </script>
+</body>
+</html>
