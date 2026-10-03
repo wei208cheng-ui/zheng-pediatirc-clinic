@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鄭煒達診所 - 糖尿病控糖配額計算機 V2.1</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: #f0f7f4;
+      padding: 20px;
+      color: #1e3a3a;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      border: 1px solid #d4e8e0;
+    }
+    h1 { color: #0d4f3c; font-size: 1.6rem; margin-bottom: 4px; }
+    .sub { color: #5a7a7a; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-weight: 600; font-size: 0.9rem; color: #2d5a5a; }
+    .field input, .field select {
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1.5px solid #cfe0d8;
+      font-size: 1rem;
+      background: #fafffd;
+    }
+    .field input:focus { border-color: #6bb89a; outline: none; box-shadow: 0 0 0 3px rgba(107, 184, 154, 0.2); }
+    .badge {
+      background: #d4f0e6;
+      color: #0d4f3c;
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    .macro-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .macro-item {
+      background: #f6fffa;
+      padding: 16px;
+      border-radius: 16px;
+      text-align: center;
+      border: 1px solid #cfe0d8;
+    }
+    .macro-item .num { font-size: 2rem; font-weight: 800; color: #0d4f3c; }
+    .macro-item .label { font-size: 0.8rem; color: #5a7a7a; }
+    .highlight-box {
+      background: #fff9e6;
+      border-left: 6px solid #f5b342;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin: 16px 0;
+    }
+    .warning-box {
+      background: #fff0f0;
+      border-left: 6px solid #c0392b;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin: 16px 0;
+      border: 1px solid #f5c6cb;
+    }
+    .warning-box strong { color: #c0392b; font-size: 1.05rem; }
+    .meal-plan {
+      background: #f2faf7;
+      border-radius: 16px;
+      padding: 16px;
+      margin: 12px 0;
+      border: 1px dashed #6bb89a;
+    }
+    .meal-plan h4 { color: #0d4f3c; margin-bottom: 8px; }
+    .plan-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+    @media (max-width: 500px) { .plan-grid { grid-template-columns: 1fr 1fr; } }
+    .plan-item { background: white; padding: 10px; border-radius: 10px; text-align: center; }
+    .plan-item .tag { font-weight: 700; color: #0d4f3c; }
+    .btn {
+      background: #0d4f3c;
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 40px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 16px;
+      transition: 0.2s;
+    }
+    .btn:hover { background: #1a6b53; }
+    .btn-outline {
+      background: transparent;
+      color: #0d4f3c;
+      border: 2px solid #0d4f3c;
+    }
+    .btn-outline:hover { background: #e6f5ef; }
+    .footer-note { font-size: 0.8rem; color: #7a9a9a; margin-top: 20px; text-align: center; }
+    .blood-sugar-reminder {
+      background: #eaf4ff;
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin: 12px 0;
+      border: 2px solid #2980b9;
+      text-align: center;
+    }
+    .blood-sugar-reminder .big-icon { font-size: 1.8rem; display: block; }
+    .blood-sugar-reminder .main-msg { font-weight: 800; color: #1a5276; font-size: 1.1rem; }
+
+    .food-section { margin-top: 18px; }
+    .food-section h3 { color:#0d4f3c; margin-bottom:10px; font-size:1.08rem; }
+    .food-intro { background:#eef8f4; border-radius:12px; padding:12px 14px; margin-bottom:12px; line-height:1.65; }
+    .food-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    @media (max-width:700px) { .food-grid { grid-template-columns:repeat(2,1fr); } }
+    @media (max-width:430px) { .food-grid { grid-template-columns:1fr 1fr; gap:8px; } }
+    .food-card { background:#fff; border:1px solid #cfe0d8; border-radius:14px; padding:12px 8px; text-align:center; min-height:145px; display:flex; flex-direction:column; justify-content:center; }
+    .food-icon { font-size:3rem; line-height:1.1; margin-bottom:7px; }
+    .food-name { font-weight:800; color:#174c3d; font-size:.95rem; }
+    .food-amount { font-size:.86rem; margin-top:4px; color:#365d59; }
+    .food-equivalent { margin-top:5px; font-size:.75rem; color:#708787; }
+    .meal-choice { border:2px solid #d7ebe3; border-radius:16px; padding:14px; margin:12px 0; background:#fbfffd; }
+    .meal-choice h4 { color:#0d4f3c; margin-bottom:8px; }
+    .choice-row { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    @media (max-width:650px) { .choice-row { grid-template-columns:repeat(2,1fr); } }
+    .portion-box { background:#fff9e6; border-left:5px solid #f5b342; padding:12px 14px; border-radius:10px; margin:12px 0; line-height:1.7; }
+    .protein-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+    @media (max-width:700px) { .protein-grid { grid-template-columns:repeat(2,1fr); } }
+    .protein-card { background:#f4fbf9; border:1px solid #cfe0d8; border-radius:14px; padding:12px 8px; text-align:center; }
+    .protein-card .food-icon { font-size:2.7rem; }
+    .protein-card strong { color:#0d4f3c; }
+    .daily-builder { background:#eaf4ff; border:2px solid #2980b9; border-radius:14px; padding:14px; margin-top:14px; }
+    .daily-builder strong { color:#1a5276; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="card" style="text-align:center;">
+    <h1>🩺 鄭煒達診所 · 糖尿病控糖計算機</h1>
+    <div class="sub">V2.2 實物份量衛教版</div>
+    <p style="font-size:0.9rem; color:#5a7a7a;">輸入基本資料，系統將計算「三大營養素起始估算＋實物份量選擇」與「三餐分配建議」</p>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div class="field"><label>🧍 身高 (cm)</label><input type="number" id="height" value="165"></div>
+      <div class="field"><label>⚖️ 體重 (kg)</label><input type="number" id="weight" value="68"></div>
+      <div class="field"><label>🏃 日常活動量</label>
+        <select id="activity">
+          <option value="25">輕度工作／臥床 (×25)</option>
+          <option value="30" selected>輕度活動 (×30)</option>
+          <option value="35">中度活動 (×35)</option>
+          <option value="40">重度活動 (×40)</option>
+        </select>
+      </div>
+      <div class="field"><label>📈 目前血糖狀況</label>
+        <select id="special">
+          <option value="normal">✅ 穩定期（糖化血色素 < 7%）</option>
+          <option value="diabetes" selected>📈 糖尿病（高血糖／併發症期）</option>
+          <option value="renal">🛑 合併腎功能不全（eGFR < 60）</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="calculate()">📊 計算個人化配額</button>
+  </div>
+
+  <!-- 結果區 -->
+  <div id="resultArea"></div>
+  <div class="footer-note">⚠️ 本工具為衛教輔助，非醫療診斷。腎功能異常、透析、低血糖高風險或正在調整藥物者，請遵照醫師與營養師個別化指示。</div>
+</div>
+
+<script>
+function calculate() {
+  const h = parseFloat(document.getElementById('height').value) || 165;
+  const w = parseFloat(document.getElementById('weight').value) || 68;
+  const act = parseFloat(document.getElementById('activity').value);
+  const special = document.getElementById('special').value;
+
+  // 1. 基礎資料：BMI 22 作為本工具的「估算理想體重」基準
+  const ideal = (h / 100) * (h / 100) * 22;
+  let cal = Math.round(ideal * act);
+
+  // V2.2：不再因「糖尿病高血糖／併發症期」自動增加 3% 熱量。
+  // 熱量需求應依體重目標、活動量、營養狀況及臨床情境個別調整。
+
+  // 2. 三大營養素：保留 V2.1 的 50/20/30 作為「起始估算」，
+  // 並明確標示為衛教估算，不作為所有糖尿病患者的固定處方。
+  const carbG = Math.round(cal * 0.50 / 4);
+  const baselineProteinG = Math.round(cal * 0.20 / 4);
+  const fatG = Math.round(cal * 0.30 / 9);
+
+  const carbP = Math.round(carbG / 15);
+  const fatP = Math.round(fatG / 5);
+
+  // 3. 蛋白質：V2.2 將糖尿病與 CKD 邏輯分開，避免兩套算法互相覆蓋。
+  // 一般糖尿病：以 1.0–1.2 g/kg 理想體重作為「評估範圍」，
+  // 預設取 1.1 g/kg；實際仍需依年齡、肌少症、營養狀態等調整。
+  // CKD：不再用固定「5份」直接處方；改為提醒依 CKD 分期及營養評估個別化。
+  let proteinG = baselineProteinG;
+  let pureProteinP;
+  let specialNote = '';
+  let bloodSugarNote = '';
+
+  if (special === 'diabetes') {
+    proteinG = Math.round(ideal * 1.1);
+    pureProteinP = Math.max(8, Math.min(Math.round(proteinG / 7), 12));
+    specialNote =
+      '📈 糖尿病控糖期：蛋白質以理想體重約 1.1 g/kg 作為本工具的起始估算；若有高齡、肌少症、體重下降、急性疾病或其他營養問題，應由醫師／營養師個別調整。';
+    bloodSugarNote =
+      '🩸 控糖重點：依醫囑監測飯前與餐後血糖；若使用 CGM，可觀察餐後血糖反應與趨勢，再評估主食與水果份量。';
+  } else if (special === 'renal') {
+    proteinG = Math.round(ideal * 0.8);
+    pureProteinP = Math.max(5, Math.min(Math.round(proteinG / 7), 9));
+    specialNote =
+      '🛑 腎功能不全：本工具不以固定 5～6 份作為 CKD 患者的通用處方。蛋白質需求應依 CKD 分期、是否透析、蛋白尿、營養狀態與腎臟科／營養師評估調整；若已透析，需求可能不同。';
+    bloodSugarNote =
+      '🩸 CKD 合併糖尿病：血糖、腎功能、蛋白質攝取及藥物需一起評估；請依醫囑安排血糖與腎功能追蹤。';
+  } else {
+    proteinG = baselineProteinG;
+    pureProteinP = Math.max(6, Math.min(Math.round(proteinG / 7), 10));
+    specialNote =
+      '✅ 穩定期：維持均衡飲食。三大營養素比例僅作為本工具的起始估算，應依體重變化、血糖、活動量及個別營養需求調整。';
+    bloodSugarNote =
+      '🩸 建議依治療方案監測血糖；若需調整飲食，可搭配飯前與餐後血糖或 CGM 趨勢觀察。';
+  }
+
+  // 4. 三餐醣類分配
+  let breakfastC = Math.round(carbP * 0.25);
+  let lunchC = Math.round(carbP * 0.35);
+  let dinnerC = Math.round(carbP * 0.30);
+  let snackC = carbP - breakfastC - lunchC - dinnerC;
+
+  if (breakfastC < 2) breakfastC = 2;
+  if (lunchC < 3) lunchC = 3;
+  if (snackC < 0) snackC = 0;
+
+  // 防止最低值調整後總份數超過原始配額
+  const allocated = breakfastC + lunchC + dinnerC;
+  if (allocated > carbP) {
+    dinnerC = Math.max(0, dinnerC - (allocated - carbP));
+    snackC = Math.max(0, carbP - breakfastC - lunchC - dinnerC);
+  }
+
+  // 5. 蛋白質分配
+  let breakfastP = Math.max(1, Math.round(pureProteinP * 0.25));
+  let lunchP = Math.round(pureProteinP * 0.35);
+  let dinnerP = pureProteinP - breakfastP - lunchP;
+  if (dinnerP < 1) dinnerP = 1;
+
+  // 6. 渲染
+  const area = document.getElementById('resultArea');
+  area.innerHTML = `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <span class="badge">🎯 理想體重估算 ${ideal.toFixed(1)} kg</span>
+        <span class="badge" style="background:#0d4f3c; color:white;">🔥 每日估算 ${cal} 大卡</span>
+      </div>
+
+      <div class="blood-sugar-reminder">
+        <span class="big-icon">🩸</span>
+        <div class="main-msg">${bloodSugarNote}</div>
+        <div style="font-size:0.9rem; color:#1a5276; margin-top:4px;">
+          可搭配「飯前／餐後血糖」或「連續血糖監測（CGM）」觀察個人餐後反應，
+          再由醫療團隊評估是否調整主食、水果或其他飲食內容。
+        </div>
+      </div>
+
+      <div class="macro-grid">
+        <div class="macro-item">
+          <div class="num">${carbP}</div>
+          <div class="label">🌾 醣類（份）</div>
+          <div style="font-size:0.7rem;color:#7a9a9a;">約 ${carbG}g</div>
+        </div>
+        <div class="macro-item" style="background:#e0f0f0;">
+          <div class="num">${pureProteinP}</div>
+          <div class="label">🥩 蛋白質（份）</div>
+          <div style="font-size:0.7rem;color:#7a9a9a;">估算約 ${proteinG}g/日</div>
+        </div>
+        <div class="macro-item">
+          <div class="num">${fatP}</div>
+          <div class="label">🥑 脂肪（份）</div>
+          <div style="font-size:0.7rem;color:#7a9a9a;">約 ${fatG}g</div>
+        </div>
+      </div>
+
+      ${specialNote ? `<div class="highlight-box">💡 ${specialNote}</div>` : ''}
+
+      <div class="warning-box" style="background:#f7fbff; border-left-color:#2980b9; border-color:#cfe5f5;">
+        <strong style="color:#1a5276;">📌 V2.2 重要說明</strong><br>
+        本計算機提供「起始估算」，不是依單一次血糖值自動開立飲食處方。
+        血糖目標與飲食調整應依個人年齡、治療方式、低血糖風險、體重目標、腎功能及醫療團隊設定。
+      </div>
+
+      <div style="background:#f4fbf9; border-radius:16px; padding:16px; margin-top:12px;">
+        <p style="font-weight:700; color:#0d4f3c;">🍽️ 餐盤法 · 三餐分配建議</p>
+        <div class="plan-grid">
+          <div class="plan-item"><span class="tag">🌅 早餐</span><br>🌾 ${breakfastC}份<br>🥩 ${breakfastP}份</div>
+          <div class="plan-item"><span class="tag">☀️ 午餐</span><br>🌾 ${lunchC}份<br>🥩 ${lunchP}份</div>
+          <div class="plan-item"><span class="tag">🌙 晚餐</span><br>🌾 ${dinnerC}份<br>🥩 ${dinnerP}份</div>
+          <div class="plan-item"><span class="tag">🍪 點心</span><br>🌾 ${snackC}份<br>🥩 0～1份</div>
+        </div>
+        <div style="margin-top:12px; font-size:0.85rem; background:white; padding:12px; border-radius:10px;">
+          <strong>📌 視覺化口訣（每餐）</strong><br>
+          ❶ 餐盤約 <strong>1/2</strong> 為非澱粉類蔬菜<br>
+          ❷ 約 <strong>1/4</strong> 為蛋白質食物<br>
+          ❸ 約 <strong>1/4</strong> 為全穀雜糧等含醣主食<br>
+          <span style="color:#c0392b;">＊進食順序可依個人情況採先蔬菜、再蛋白質、最後主食；其對餐後血糖的效果仍應以個人實測反應評估。</span>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; background:#fff9f0; border-radius:12px; padding:14px; border:1px solid #f5d6b3;">
+        <strong>🥗 食物範例（份量需依個人配額及血糖反應調整）</strong><br>
+        • <strong>早餐</strong>：無糖豆漿＋蛋＋全穀類主食＋適量水果＋蔬菜<br>
+        • <strong>午餐</strong>：魚／雞／豆製品＋糙米或其他全穀主食＋大量蔬菜<br>
+        • <strong>晚餐</strong>：魚／肉／豆製品＋適量主食＋大量蔬菜<br>
+        • <strong>點心</strong>：是否需要點心應依藥物、血糖、活動量及個別需求決定，不以單一血糖數字自動決定。
+      </div>
+
+
+      <div class="food-section">
+        <h3>🌾 一份醣類＝約 15 公克醣類：先看「實物」，再決定吃多少</h3>
+        <div class="food-intro">
+          <strong>最重要的概念：</strong>本工具把「1 份醣類」定義為約 <strong>15 g 醣類</strong>。
+          下列是方便病人執行的「約 1 份」視覺化選擇；實際食物大小、品牌與烹調方式會造成差異，
+          因此不是精確秤重處方。
+        </div>
+        <div class="food-grid">
+          <div class="food-card"><div class="food-icon">🍚</div><div class="food-name">熟白飯</div><div class="food-amount">約 1/4 碗</div><div class="food-equivalent">≈ 15 g 醣類</div></div>
+          <div class="food-card"><div class="food-icon">🍠</div><div class="food-name">地瓜</div><div class="food-amount">約 55 g</div><div class="food-equivalent">≈ 15 g 醣類</div></div>
+          <div class="food-card"><div class="food-icon">🌽</div><div class="food-name">玉米</div><div class="food-amount">約 1/2 根</div><div class="food-equivalent">≈ 15 g 醣類</div></div>
+          <div class="food-card"><div class="food-icon">🥔</div><div class="food-name">馬鈴薯</div><div class="food-amount">約 80 g</div><div class="food-equivalent">≈ 15 g 醣類</div></div>
+          <div class="food-card"><div class="food-icon">🍎</div><div class="food-name">蘋果</div><div class="food-amount">約 1/2 個小型</div><div class="food-equivalent">≈ 15 g 醣類</div></div>
+          <div class="food-card"><div class="food-icon">🍊</div><div class="food-name">柳橙</div><div class="food-amount">約 1 個小型</div><div class="food-equivalent">≈ 15 g 醣類</div></div>
+          <div class="food-card"><div class="food-icon">🥝</div><div class="food-name">奇異果</div><div class="food-amount">約 2 小顆</div><div class="food-equivalent">≈ 15 g 醣類</div></div>
+          <div class="food-card"><div class="food-icon">🍐</div><div class="food-name">梨子</div><div class="food-amount">約 1/2 個小型</div><div class="food-equivalent">≈ 15 g 醣類</div></div>
+          <div class="food-card"><div class="food-icon">🥛</div><div class="food-name">鮮奶</div><div class="food-amount">約 240 mL</div><div class="food-equivalent">≈ 12 g 醣類＋約 8 g 蛋白質</div></div>
+        </div>
+
+        <div class="portion-box">
+          <strong>📏 病人最好記的方式：</strong><br>
+          1 份醣 ≈ 15 g 醣類。<br>
+          例如：一天若需要 12 份醣，就是約 <strong>180 g 醣類</strong>；
+          可以把它拆成早餐、午餐、晚餐與必要時的點心，再用上面的「實物」互換。
+        </div>
+
+        <div class="meal-choice">
+          <h4>🌅 早餐：照配額「選擇」，不用每天吃一樣</h4>
+          <div class="choice-row">
+            <div class="food-card"><div class="food-icon">🥛</div><div class="food-name">無糖豆漿</div><div class="food-amount">搭配 1～2 份醣</div></div>
+            <div class="food-card"><div class="food-icon">🥚</div><div class="food-name">水煮蛋</div><div class="food-amount">搭配蛋白質份數</div></div>
+            <div class="food-card"><div class="food-icon">🍠</div><div class="food-name">地瓜</div><div class="food-amount">每約 55 g ≈ 1 份醣</div></div>
+            <div class="food-card"><div class="food-icon">🍎</div><div class="food-name">水果</div><div class="food-amount">約 1 份醣</div></div>
+          </div>
+        </div>
+
+        <div class="meal-choice">
+          <h4>☀️ 午餐：主食＋蛋白質＋大量蔬菜</h4>
+          <div class="choice-row">
+            <div class="food-card"><div class="food-icon">🍚</div><div class="food-name">糙米飯</div><div class="food-amount">每約 1/4 碗 ≈ 1 份醣</div></div>
+            <div class="food-card"><div class="food-icon">🐔</div><div class="food-name">雞肉</div><div class="food-amount">依蛋白質份數選擇</div></div>
+            <div class="food-card"><div class="food-icon">🥬</div><div class="food-name">青菜</div><div class="food-amount">餐盤約 1/2</div></div>
+            <div class="food-card"><div class="food-icon">🍊</div><div class="food-name">水果</div><div class="food-amount">依醣類配額安排</div></div>
+          </div>
+        </div>
+
+        <div class="meal-choice">
+          <h4>🌙 晚餐：控制主食份量，不代表不能吃主食</h4>
+          <div class="choice-row">
+            <div class="food-card"><div class="food-icon">🍚</div><div class="food-name">飯</div><div class="food-amount">依當餐醣類配額</div></div>
+            <div class="food-card"><div class="food-icon">🐟</div><div class="food-name">魚</div><div class="food-amount">依蛋白質份數</div></div>
+            <div class="food-card"><div class="food-icon">🥦</div><div class="food-name">蔬菜</div><div class="food-amount">餐盤約 1/2</div></div>
+            <div class="food-card"><div class="food-icon">🥝</div><div class="food-name">奇異果</div><div class="food-amount">約 2 小顆 ≈ 1 份醣</div></div>
+          </div>
+        </div>
+
+        <div class="meal-choice">
+          <h4>🍮 點心／豆花：先看「有沒有需要」，再看醣類</h4>
+          <div class="choice-row">
+            <div class="food-card"><div class="food-icon">🍮</div><div class="food-name">無糖豆花</div><div class="food-amount">豆花本身仍含醣</div><div class="food-equivalent">糖水、粉圓、芋圓會另外增加醣量</div></div>
+            <div class="food-card"><div class="food-icon">🥛</div><div class="food-name">鮮奶</div><div class="food-amount">240 mL 約 1 份醣</div><div class="food-equivalent">同時提供蛋白質</div></div>
+            <div class="food-card"><div class="food-icon">🍎</div><div class="food-name">水果</div><div class="food-amount">約 1 份醣</div><div class="food-equivalent">優先選完整水果，不喝果汁</div></div>
+            <div class="food-card"><div class="food-icon">🥜</div><div class="food-name">堅果</div><div class="food-amount">少量</div><div class="food-equivalent">主要提供脂肪，份量仍要控制</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="food-section">
+        <h3>🥩 蛋白質：1 份約 7 公克蛋白質，用「手掌大小」理解最容易</h3>
+        <div class="food-intro">
+          <strong>本工具的蛋白質換算：</strong>約 <strong>1 份＝7 g 蛋白質</strong>。
+          以下是衛教上的「約 1 份」食物例子；不同部位、重量與品牌會有差異，
+          若需要精確營養處方，應使用食品標示或營養師計算。
+        </div>
+        <div class="protein-grid">
+          <div class="protein-card"><div class="food-icon">🥚</div><strong>雞蛋 1 顆</strong><br><span>約 6～7 g 蛋白質</span></div>
+          <div class="protein-card"><div class="food-icon">🐔</div><strong>熟雞肉約 30 g</strong><br><span>約 7 g 蛋白質</span></div>
+          <div class="protein-card"><div class="food-icon">🐟</div><strong>熟魚肉約 30 g</strong><br><span>約 6～7 g 蛋白質</span></div>
+          <div class="protein-card"><div class="food-icon">🥩</div><strong>熟瘦肉約 30 g</strong><br><span>約 7 g 蛋白質</span></div>
+          <div class="protein-card"><div class="food-icon">🫘</div><strong>豆腐約 80～100 g</strong><br><span>約 7～10 g 蛋白質</span></div>
+          <div class="protein-card"><div class="food-icon">🥛</div><strong>鮮奶約 240 mL</strong><br><span>約 8 g 蛋白質</span></div>
+          <div class="protein-card"><div class="food-icon">🥣</div><strong>無糖高蛋白食品</strong><br><span>以營養標示為準</span></div>
+          <div class="protein-card"><div class="food-icon">🐟</div><strong>魚／肉「手掌」</strong><br><span>通常是數份蛋白質，不是 1 份</span></div>
+        </div>
+
+        <div class="daily-builder">
+          <strong>📊 如果一天目標是 60 g 蛋白質：</strong><br>
+          60 ÷ 7 ≈ <strong>8.6 份</strong>，衛教上可先理解為約 <strong>9 份蛋白質</strong>。
+          <br><br>
+          例如可拆成：早餐約 2 份、午餐約 3 份、晚餐約 3 份，剩餘約 1 份依實際需要安排。
+          <br>
+          <strong>重點：</strong>「3 份蛋白質」≈ 約 21 g 蛋白質，
+          約可理解為熟雞肉／魚肉／瘦肉 <strong>90 g 左右</strong>（實際蛋白質依食材不同而異）。
+        </div>
+
+        <div class="portion-box">
+          <strong>✋ 病人最容易執行的記法：</strong><br>
+          1 份蛋白質 ≈ 7 g 蛋白質。<br>
+          3 份 ≈ 21 g 蛋白質 ≈ 熟魚／雞／瘦肉約 90 g 左右。<br>
+          但「手掌大小」只是視覺估算，不能取代食品秤或營養標示。
+        </div>
+      </div>
+
+      <div class="warning-box">
+        <strong>⚠️ 食物份量的醫療衛教提醒：</strong><br>
+        以上「1 份」是方便病人執行的約略換算，不同食品的實際醣類與蛋白質含量可能不同。
+        特別是豆花、豆漿、牛奶、豆製品及加工食品，不能只看外觀判斷份量。
+        <br><br>
+        <strong>CKD、透析、蛋白尿、肌少症、孕婦、兒童、體重明顯下降或使用降血糖藥物者</strong>，
+        不應直接套用固定蛋白質或醣類配額，應依醫療團隊個別化調整。
+      </div>
+
+      <div class="warning-box">
+        <strong>🩸 最終衛教核心提醒：</strong><br>
+        <span style="font-size:1.05rem;">「不要用單一次飯後血糖，自動決定下一餐要加飯或減飯。」</span><br>
+        <span style="font-size:0.9rem; color:#5a5a5a;">
+          若血糖反覆高於或低於個人治療目標，應檢視餐量、藥物、活動量、感染／壓力及其他因素，
+          並與醫師或糖尿病衛教師討論，而不是由本工具自行調整藥物。
+        </span>
+      </div>
+
+      <button class="btn btn-outline" onclick="copySummary()">📋 複製衛教摘要（分享給患者／家屬）</button>
+    </div>
+  `;
+
+  window._summaryData = {
+    breakfastC, lunchC, dinnerC, snackC,
+    breakfastP, lunchP, dinnerP,
+    pureProteinP, carbP, proteinG, fatP,
+    specialNote, bloodSugarNote,
+    cal, ideal, h, w, act, special
+  };
+}
+
+function copySummary() {
+  const d = window._summaryData;
+  if (!d) return;
+
+  const text = `📋 鄭煒達診所 · 個人化糖尿病控糖配額摘要
+=================================
+🧍 身高 / 體重：${document.getElementById('height').value}cm / ${document.getElementById('weight').value}kg
+🎯 理想體重估算：${d.ideal.toFixed(1)}kg
+🔥 每日估算熱量：${d.cal} 大卡
+
+🌾 每日醣類總份數：${d.carbP} 份（約 ${Math.round(d.carbP * 15)}g）
+🥩 蛋白質估算：${d.proteinG}g/日（約 ${d.pureProteinP} 份）
+🥑 脂肪：${d.fatP} 份
+
+🍽️ 三餐醣類與蛋白質分配：
+早餐：醣 ${d.breakfastC}份 / 蛋白 ${d.breakfastP}份
+午餐：醣 ${d.lunchC}份 / 蛋白 ${d.lunchP}份
+晚餐：醣 ${d.dinnerC}份 / 蛋白 ${d.dinnerP}份
+點心：醣 ${d.snackC}份
+
+🩸 血糖監測原則：
+${d.bloodSugarNote}
+
+🥗 餐盤口訣：約 1/2 非澱粉蔬菜 + 1/4 蛋白質 + 1/4 含醣主食
+⚠️ 飲食調整：不要依單一次血糖值自動加減飯量；應觀察趨勢並與醫療團隊討論。
+
+（本摘要由鄭煒達診所衛教輔助工具生成；不取代醫師、營養師之個別化醫療建議）`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    alert('✅ 衛教摘要已複製到剪貼簿！可貼到 LINE／備忘錄／病歷系統。');
+  }).catch(() => {
+    alert('複製失敗，請手動選取文字複製。');
+  });
+}
+</script>
+</body>
+</html>
